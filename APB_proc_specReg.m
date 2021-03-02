@@ -2,41 +2,55 @@
 % format
 
 %% Select the RAW files
-[filename1,~,~] = uigetfile('.raw','Select .raw file');
-[filename2,pathname,~] = uigetfile('.SPAR','Select .SPAR file');
-cd(pathname);
+% This is for 7 T Raw files
+%[data,water,info,filename] = read_sinlabraw();
+
+% This is for 3 T Philips
+[data,water,info,filename] = read_sdat();
+flag_Newcastle = 0;
+% so far not processed the NWS water references for Newc
+% some Newcastle data require a flip of everything ...
+%% Data parameters
+
+[N, NT]             =   size(data);
+NPair               =   NT/2;
+
+[pathname,name,~] = fileparts(filename);
+C = strsplit(name,'_');
+
+%% make folders
+name=['SpecReg/Data/' C{1}]; % name of your output files [need to adjust accordingly!]
+disp(name)
 
 % make a new SpecReg directory
+
 mkdir('SpecReg');
 mkdir('SpecReg/Figures');
 mkdir('SpecReg/Data');
 
-[~,name,~] = fileparts(filename2);
-C = strsplit(name,'_');
-
-name=['SpecReg/Data/' C{3}]; % name of your output files [need to adjust accordingly!]
-disp(name)
-
-[data, water]       =   mrs_readRAW(filename1); % reads in the sin/lab/raw data and gets the metab/water specs
-info                =   mrs_readSPAR(filename2);
-[N, NT]             =   size(data);
-NPair               =   NT/2;
-
 %% Do an ECC correction
+% do it on the data
 data = mrs_ifft(data); % convert to FID
 data = spa_eddyCor2(mrs_ifft(water(:,2)),data); % Use one of the water refs
 data = mrs_fft(data); % convert back
 
+
 %% Split ON/OFF pairs
-data_on         =   mrs_ifft(data(:,1:2:end));
-data_off        =   mrs_ifft(data(:,2:2:end));
+if(flag_Newcastle)
+    % sometimes requires a -ve flag for some reason?
+    data_on         =   mrs_ifft(data(:,2:2:end));
+    data_off        =   mrs_ifft(data(:,1:2:end));
+else
+    data_on         =   mrs_ifft(data(:,1:2:end));
+    data_off        =   mrs_ifft(data(:,2:2:end));
+end
 
 metab.info      = info;
 % Define a 'template' for spectral registration
 template        =  mean(data_off,2); % Mean of OFF data
 
 % Option to manually phase the template 1st - shouldn't be needed
-[template ,pc] = mrs_manualzeroPHC(mrs_fft(template),[1 4096],zeros(1,4096));
+[template ,pc] = mrs_manualzeroPHC(mrs_fft(template),[1 N],zeros(1,N));
 
 % Recorrect all spectra with manual phase if applied
 data_off    =   mrs_rephase(mrs_fft(data_off),pc);
@@ -48,8 +62,8 @@ data_on     =   mrs_ifft(data_on);
 template    =   mrs_ifft(template);
 
 % Do first spectral registration to template
-[metab.off_global, f_vec_off, p_vec_off,f_align_OFF]    = spec_reg_fn(data_off, template, metab.info, [0 5]);
-[metab.on_global, f_vec_on, p_vec_on, f_align_ON]       = spec_reg_fn(data_on, template, metab.info, [0 5]);
+[metab.off_global, f_vec_off, p_vec_off,f_align_OFF]    = spec_reg_fn(data_off, template, metab.info, [0 5], 4.65);
+[metab.on_global, f_vec_on, p_vec_on, f_align_ON]       = spec_reg_fn(data_on, template, metab.info, [0 5], 4.65);
 
 figure(f_align_OFF);
 print('SpecReg/Figures/align_OFF.pdf', '-dpdf', '-fillpage');
@@ -70,7 +84,7 @@ subplot(2,1,2)
 plot(rad2deg(p_vec));xlabel('measurement'); ylabel('phase (deg)');
 print('SpecReg/Figures/corrections.pdf', '-dpdf', '-fillpage');
 % calculate ppm vector from information
-ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, 4.7); % 4.7 because in previous script but need to get exact value
+ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, 4.65); % 4.7 because in previous script but need to get exact value
 
 
 %% Automatic rejection of datasets
@@ -196,8 +210,8 @@ print('SpecReg/Figures/SRDAScomparison.pdf', '-dpdf', '-fillpage');
 
 
 figure('Name', 'Diff Spec');hold on
-plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),6,info.BW,0.10))));
-yL=get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),3,info.BW,0.10))), ppm_vec);
+plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),0,info.BW,0.10))));
+yL=get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),0,info.BW,0.10))), ppm_vec);
 set(gca, 'XDir', 'reverse');
 xlim([0 5]);
 ylim(yL);
@@ -216,18 +230,43 @@ save('SpecReg/Data/diff_spec.mat', 'diff_FID');
 save('SpecReg/Data/sum_spec.mat', 'sum_FID');
 %% Export to SDAT/SPAR as is currently done in the pipeline...
 
-mrs_writeSDAT([pathname, name,'_on.SDAT'], mrs_fft(metab.final.on));
-mrs_writeSDAT([pathname,name,'_off.SDAT'], mrs_fft(metab.final.off));
-mrs_writeSDAT([pathname,name,'_diff.SDAT'], mrs_fft(metab.final.diff));
-mrs_writeSDAT([pathname,name,'_sum.SDAT'], mrs_fft(metab.final.sum));
-%mrs_writeSDAT([pathname,name,'_sum.SDAT'], sum_avg);
+outpath = './';
 
-copyfile(filename2,[pathname,name,'_on.SPAR']);
-copyfile(filename2,[pathname,name,'_off.SPAR']);
-copyfile(filename2,[pathname,name,'_diff.SPAR']);
-copyfile(filename2,[pathname,name,'_sum.SPAR']);
-%copyfile(filename2,[pathname,name,'_sum.SPAR']);
+mrs_writeSDAT([outpath,name,'_on.SDAT'], mrs_fft(metab.final.on));
+mrs_writeSDAT([outpath,name,'_off.SDAT'], mrs_fft(metab.final.off));
+mrs_writeSDAT([outpath,name,'_diff.SDAT'], mrs_fft(metab.final.diff));
+mrs_writeSDAT([outpath,name,'_sum.SDAT'], mrs_fft(metab.final.sum));
 
+copyfile(filename,[outpath,name,'_on.SPAR']);
+copyfile(filename,[outpath,name,'_off.SPAR']);
+copyfile(filename,[outpath,name,'_diff.SPAR']);
+copyfile(filename,[outpath,name,'_sum.SPAR']);
 
+% Also export spa files
+% need correct water referencing
 
+%% Water referencing
+% use the water collected in same file 
+% but for newcastle data use NWS
+
+if(flag_Newcastle)
+    [water,~,info,filename] = read_sdat(); % get NWS
+end
+
+% Do ECC of water reference
+waterf = mrs_ifft(water); % convert to FID
+waterf = spa_eddyCor2(waterf(:,2),waterf); % Eddy current corretion
+
+% need to correct water references
+[water_aligned, f_vec, p_vec, f_align]    = spec_reg_fn(waterf, waterf(:,1), metab.info, [3 6.5], 0, 4.65);
+
+waterfid = mean(water_aligned,2); % average water acquisitions
+
+txfrq = -info.transmit_frequency;
+% need a factor of 2 in the difference spectrum since it effectively comes
+% from 2 acquisitions
+write_spa([outpath,name,'_diff.spa'], 2*metab.final.diff, waterfid, txfrq, info.BW, 4.65);
+write_spa([outpath,name,'_off.spa'], metab.final.off, waterfid, txfrq, info.BW, 4.65);
+write_spa([outpath,name,'_on.spa'], metab.final.on, waterfid, txfrq, info.BW, 4.65);
+write_spa([outpath,name,'_sum.spa'], metab.final.sum, waterfid, txfrq, info.BW, 4.65);
 
