@@ -1,13 +1,21 @@
 % APB: Script to processes the MEGA-sLASER data for 7 T data using Raw
 % format
+%% Display parameters
 
+spec_lb = 1;
+spec_filt = 99;
+delta0 = 4.75;
 %% Select the RAW files
 % This is for 7 T Raw files
-%[data,water,info,filename] = read_sinlabraw();
+[data,water,info,filename] = read_sinlabraw();
 
 % This is for 3 T Philips
-[data,water,info,filename] = read_sdat();
-flag_Newcastle = 0;
+%[data,water,info,filename] = read_sdat();
+flag_Newcastle = 0; % Newcastle = 1
+
+% This is for GE (work in progress)
+%[data, water, info, filename] = read_GE();
+
 % so far not processed the NWS water references for Newc
 % some Newcastle data require a flip of everything ...
 %% Data parameters
@@ -62,8 +70,8 @@ data_on     =   mrs_ifft(data_on);
 template    =   mrs_ifft(template);
 
 % Do first spectral registration to template
-[metab.off_global, f_vec_off, p_vec_off,f_align_OFF]    = spec_reg_fn(data_off, template, metab.info, [0 5], 4.65);
-[metab.on_global, f_vec_on, p_vec_on, f_align_ON]       = spec_reg_fn(data_on, template, metab.info, [0 5], 4.65);
+[metab.off_global, f_vec_off, p_vec_off,f_align_OFF]    = spec_reg_fn(data_off, template, metab.info, [0 5], 1, delta0);
+[metab.on_global, f_vec_on, p_vec_on, f_align_ON]       = spec_reg_fn(data_on, template, metab.info, [0 5], 1, delta0);
 
 figure(f_align_OFF);
 print('SpecReg/Figures/align_OFF.pdf', '-dpdf', '-fillpage');
@@ -84,7 +92,7 @@ subplot(2,1,2)
 plot(rad2deg(p_vec));xlabel('measurement'); ylabel('phase (deg)');
 print('SpecReg/Figures/corrections.pdf', '-dpdf', '-fillpage');
 % calculate ppm vector from information
-ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, 4.65); % 4.7 because in previous script but need to get exact value
+ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, delta0); % 4.7 because in previous script but need to get exact value
 
 
 %% Automatic rejection of datasets
@@ -163,7 +171,7 @@ s1=squeeze(mean(metab.off_rejected,2));
 s2=squeeze(mean(metab.on_rejected,2));
 
 % plot after rejections
-figure(f);hold on;plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2-s1,0,info.BW,0.10))));
+figure(f);hold on;plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2-s1,spec_lb,info.BW,spec_filt))));
 set(gca, 'XDir', 'reverse');title('Diff Spec');xlabel('ppm');
 xlim([2.2 4.2]);legend('Before Rejections', 'After Rejections');
 print('SpecReg/Figures/rejections_influence.pdf', '-dpdf');
@@ -171,7 +179,7 @@ print('SpecReg/Figures/rejections_influence.pdf', '-dpdf');
 
 %Do spectralReg over Cho peak only ... 3.15 to 3.35
 for i = 1:size(s2,2)
-     [s2_cor, f_vec_local, ph_vec_local,f_align_DAS] = spec_reg_fn(s2, s1, metab.info, [3.15 3.35],1);
+     [s2_cor, f_vec_local, ph_vec_local,f_align_DAS] = spec_reg_fn(s2, s1, metab.info, [3.15 3.35],1,delta0);
 end
 figure(f_align_DAS);
 print('SpecReg/Figures/align_DAS.pdf', '-dpdf', '-fillpage');
@@ -188,8 +196,8 @@ print('SpecReg/Figures/final_OnOff.pdf', '-dpdf', '-fillpage');
 
 
 figure('Name', 'No Corrections');
-plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(sum(data_on,2)-sum(data_off,2),3,info.BW,0.10))));
-yL = get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw(sum(data_on,2)-sum(data_off,2),3,info.BW,0.10))), ppm_vec)
+plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(sum(data_on,2)-sum(data_off,2),spec_lb,info.BW,spec_filt))));
+yL = get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw(sum(data_on,2)-sum(data_off,2),spec_lb,info.BW,spec_filt))), ppm_vec)
 set(gca, 'XDir', 'reverse');
 xlim([0 5]);
 ylim(yL);
@@ -198,9 +206,9 @@ legend('No Corr');
 print('SpecReg/Figures/spec_no_corr.pdf', '-dpdf', '-fillpage');
 
 figure('Name', 'SR comparison');hold on
-plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2-s1,3,info.BW,0.10))));
-plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2_cor-s1,3,info.BW,0.10))));
-yL = get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw(s2_cor-s1,3,info.BW,0.10))), ppm_vec);
+plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2-s1,spec_lb,info.BW,spec_filt))));
+plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2_cor-s1,spec_lb,info.BW,spec_filt))));
+yL = get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw(s2_cor-s1,spec_lb,info.BW,spec_filt))), ppm_vec);
 set(gca, 'XDir', 'reverse');
 xlim([0 5]);
 ylim(yL);
@@ -210,8 +218,8 @@ print('SpecReg/Figures/SRDAScomparison.pdf', '-dpdf', '-fillpage');
 
 
 figure('Name', 'Diff Spec');hold on
-plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),0,info.BW,0.10))));
-yL=get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),0,info.BW,0.10))), ppm_vec);
+plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),spec_lb,info.BW,spec_filt))));
+yL=get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),spec_lb,info.BW,spec_filt))), ppm_vec);
 set(gca, 'XDir', 'reverse');
 xlim([0 5]);
 ylim(yL);
@@ -250,23 +258,26 @@ copyfile(filename,[outpath,name,'_sum.SPAR']);
 % but for newcastle data use NWS
 
 if(flag_Newcastle)
+    disp('choose the NWS file');
     [water,~,info,filename] = read_sdat(); % get NWS
+    % Do ECC of water reference
+    waterf = mrs_ifft(water); % convert to FID
+    waterf = spa_eddyCor2(waterf(:,1),waterf); % Eddy current corretion
+else
+    % Do ECC of water reference
+    waterf = mrs_ifft(water); % convert to FID
+    waterf = spa_eddyCor2(waterf(:,2),waterf); % Eddy current corretion
 end
-
-% Do ECC of water reference
-waterf = mrs_ifft(water); % convert to FID
-waterf = spa_eddyCor2(waterf(:,2),waterf); % Eddy current corretion
 
 % need to correct water references
 [water_aligned, f_vec, p_vec, f_align]    = spec_reg_fn(waterf, waterf(:,1), metab.info, [3 6.5], 0, 4.65);
 
 waterfid = mean(water_aligned,2); % average water acquisitions
 
-txfrq = -info.transmit_frequency;
-% need a factor of 2 in the difference spectrum since it effectively comes
-% from 2 acquisitions
-write_spa([outpath,name,'_diff.spa'], 2*metab.final.diff, waterfid, txfrq, info.BW, 4.65);
-write_spa([outpath,name,'_off.spa'], metab.final.off, waterfid, txfrq, info.BW, 4.65);
-write_spa([outpath,name,'_on.spa'], metab.final.on, waterfid, txfrq, info.BW, 4.65);
-write_spa([outpath,name,'_sum.spa'], metab.final.sum, waterfid, txfrq, info.BW, 4.65);
+txfrq = info.transmit_frequency;
+
+write_spa([outpath,name,'_diff.spa'], conj(metab.final.diff), waterfid, txfrq, info.BW, 4.65);
+write_spa([outpath,name,'_off.spa'], conj(metab.final.off), waterfid, txfrq, info.BW, 4.65);
+write_spa([outpath,name,'_on.spa'], conj(metab.final.on), waterfid, txfrq, info.BW, 4.65);
+write_spa([outpath,name,'_sum.spa'], conj(metab.final.sum), waterfid, txfrq, info.BW, 4.65);
 
