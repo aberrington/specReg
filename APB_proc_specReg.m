@@ -2,9 +2,9 @@
 % format
 %% Display parameters
 
-spec_lb = 1;
+spec_lb = 5;
 spec_filt = 99;
-delta0 = 4.75;
+delta0 = 4.7; % is the 'default'
 %% Select the RAW files
 % This is for 7 T Raw files
 [data,water,info,filename] = read_sinlabraw();
@@ -94,6 +94,10 @@ print('SpecReg/Figures/corrections.pdf', '-dpdf', '-fillpage');
 % calculate ppm vector from information
 ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, delta0); % 4.7 because in previous script but need to get exact value
 
+%% Shift NAA frequency to actual ppm units
+
+[metab] = spec_reference_NAA(metab,ppm_vec);
+
 
 %% Automatic rejection of datasets
 
@@ -154,7 +158,7 @@ OFF_rej = [];
 ON_rej  = [];
 for r=1:length(rej_idx)
     if(mod(rej_idx(r),2)) % this is odd = OFF
-        OFF_rej = (rej_idx(r)-1)/2;
+        OFF_rej = 1+(rej_idx(r)-1)/2;
     else
         ON_rej = rej_idx(r)/2;
     end

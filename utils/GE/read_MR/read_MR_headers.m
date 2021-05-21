@@ -1,5 +1,6 @@
 function header = read_MR_headers( filename, headerID, datatype )
-%-----------------------------------------------------------------------------
+%read_MR_headers - read MR headers from image or raw data files
+%
 % Read headers from MR image or rawdata files, and return them as structures.
 % Supported file formats include Signa rawfiles (rev 7, 8, and 9) and Signa
 % images extracted with either the listselect or ximg tools.
@@ -19,6 +20,9 @@ function header = read_MR_headers( filename, headerID, datatype )
 % Support for 'per_pass', 'unlock_raw', 'nex_tab', 'nex_abort_tab', and 'tool'
 % headers is not implemented yet.
 %
+
+% Copyright (c) 2012 by General Electric Company. All rights reserved.
+
 % Revision History
 % Rev 3.13  2003-Jun-24  Matthew Eash
 % 3.13 2003-Jun-24 MGE  Changed 'read_rdb_hdr_rev9' fread(...'char') to freadc
@@ -47,7 +51,6 @@ if exist('/usr/g/mrraw','dir')
 else
     isHost = 0;
 end
-
 if nargin==1
     headerID = 'all';
     datatype = 'raw';
@@ -61,14 +64,6 @@ header = [];
 % Attempt to auto-recognize the file type.
 [ formatID, endianID, header_list, header_lengths, rdbm_rev ] = get_file_format( filename,datatype );
 % fprintf('FormatID: %s  EndianID: %s  HeaderID: %s\n', formatID, endianID, headerID );
-
-if rdbm_rev==24
-    rdbm_rev=20.006;
-end
-
-if rdbm_rev==20.007
-    rdbm_rev=20.006;
-end
 
 if strcmp( formatID, '')
     fprintf('READ_MR_HEADERS could not recognize this file format.\n');
@@ -121,17 +116,18 @@ switch headerID
                 case  5 %  5 nex_tab (not implemented)
                 case  6 %  6 nex_abort_tab (not implemented)
                 case  7 %  7 tool (not implemented)
-                case  8 %  8 prescan (not implemented)
+                case  8 %  8 prescan 
+                    header.psc  = read_psc_header(fid, rdbm_rev); 
                 case  9 %  9 exam
                     header.exam  = read_exam_header( fid, rdbm_rev );
                 case 10 % 10 series
                     header.series  = read_series_header( fid, rdbm_rev );
                 case 11 % 11 image
                     header.image  = read_image_header( fid, rdbm_rev );
-                case 12 % 12 suite
-                    header.suite = read_suite_header( fid );
-                case 13 % 13 pixel
-                    header.pixel = read_pixel_header( fid );
+                case 12 % 12 grad_data
+                    header.grad_data = read_grad_header( fid, rdbm_rev );
+                case 13 % 13 cttentry
+                    header.cttentry = read_ctt_header( fid, rdbm_rev );
             end
             offset = offset + header_lengths(header_list(i));
         end
@@ -231,7 +227,7 @@ if strcmp(datatype,'raw') == 1
     end
     if (hdr_sizes_file)
         fid = fopen(filename,'r','l');
-        rdbm_rev = fread(fid, 1, 'float32')
+        rdbm_rev = fread(fid, 1, 'float32');
         rdbm_rev = round(rdbm_rev*1000)/1000;
         fclose(fid);
         if (isHost)

@@ -29,9 +29,12 @@ SV_info.coils=(header.rdb_hdr.dab(2)-header.rdb_hdr.dab(1))+1;
 SV_info.transmit_frequency = -header.rdb_hdr.ps_mps_freq/10;
 ppm=(linspace(SV_info.bw_Hz/2000,-SV_info.bw_Hz/2000,zf_factor*SV_info.num_points)/(128*10^3))*10^6+4.7;
 
-fid = fopen([filepath,filename],'r', 'ieee-le');
-status = fseek(fid, 1468, 'bof');
-pfile_header_size = fread(fid,1,'integer*4');
+% don't need below - hard coded! 
+% fid = fopen([filepath,filename],'r', 'ieee-le');
+% status = fseek(fid, 1468, 'bof');
+% pfile_header_size = fread(fid,1,'integer*4');
+
+pfile_header_size = header.total_length; % APB this is already in header
 
 fid = fopen([filepath,filename],'r', 'ieee-le');
 status = fseek(fid, pfile_header_size, 'bof');
