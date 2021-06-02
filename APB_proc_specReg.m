@@ -2,13 +2,14 @@
 % format
 %% Display parameters
 
-spec_lb = 4;
+spec_lb = 1;
 spec_filt = 99;
 delta0 = 4.7; % is the 'default'
 
 %% Processing parameters
 
 do_DAS = 0; % causes baseline shifts when large water peak
+fMRS_block_size = 20; % split into 8 blocks
 
 %% Select the RAW files
 % This is for 7 T Raw files
@@ -177,9 +178,30 @@ metab.off_rejected(:, OFF_rej) = [];
 metab.on_rejected(:, ON_rej) = [];
 
 % fMRS split here
+NBlocks = NPair / fMRS_block_size;
 
-s1=squeeze(mean(metab.off_rejected,2));
-s2=squeeze(mean(metab.on_rejected,2));
+for nB = 1:NBlocks
+    tmp_block = (1+(fMRS_block_size)*(nB-1):(fMRS_block_size)*nB);
+    metab.off_global_blocks(:,:,nB) = metab.off_global(:,tmp_block);
+    metab.on_global_blocks(:,:,nB) = metab.on_global(:,tmp_block);
+end
+
+% remove the outliers from the averaged spectra
+metab.off_rejected_blocks = metab.off_global_blocks;
+metab.on_rejected_blocks = metab.on_global_blocks;
+
+[row col] = ind2sub([fMRS_block_size, NBlocks], OFF_rej);
+metab.off_rejected_blocks(:, row, col) = NaN; % make NAN
+
+[row col] = ind2sub([fMRS_block_size, NBlocks], ON_rej);
+metab.on_rejected_blocks(:, row, col) = NaN; % make NAN
+
+s1 = squeeze(nanmean(metab.off_rejected_blocks,2));
+s2 = squeeze(nanmean(metab.on_rejected_blocks,2));
+
+%This is the main script - need to include it 
+%s1=squeeze(mean(metab.off_rejected,2));
+%s2=squeeze(mean(metab.on_rejected,2));
 
 % plot after rejections
 figure(f);hold on;plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(s2-s1,spec_lb,info.BW,spec_filt))));
@@ -190,12 +212,11 @@ print('SpecReg/Figures/rejections_influence.pdf', '-dpdf');
 
 %Do spectralReg over Cho peak only ... 3.15 to 3.35
 if(do_DAS)
-    
     for i = 1:size(s2,2)
-         [s2_cor, f_vec_local, ph_vec_local,f_align_DAS] = spec_reg_fn(s2, s1, metab.info, [3.1 3.3],1,delta0); % previously 3.15-3.35
+             [s2_cor, f_vec_local, ph_vec_local,f_align_DAS] = spec_reg_fn(s2(:,i), s1(:,i), metab.info, [3.1 3.3],1,delta0); % previously 3.15-3.35
     end
-figure(f_align_DAS);
-print('SpecReg/Figures/align_DAS.pdf', '-dpdf', '-fillpage');
+    figure(f_align_DAS);
+    print('SpecReg/Figures/align_DAS.pdf', '-dpdf', '-fillpage');
 else
     s2_cor = s2;
 end
