@@ -1,4 +1,4 @@
-function [metab] = spec_reference_NAA(metab,ppm_vec)
+function [metab, SNR] = spec_reference_NAA(metab,ppm_vec)
 
 
 %3.15 3.4
@@ -22,6 +22,12 @@ for i = 1:size(metab.off_global,2)
     metab.off_global(:,i)   = mrs_ifft(circshift(mrs_fft(metab.off_global(:,i)),spec_shift));
     metab.on_global(:,i)    = mrs_ifft(circshift(mrs_fft(metab.on_global(:,i)),spec_shift));
 end
+
+in.ppm = ppm_vec;
+in.specs = conj(mrs_fft(squeeze(nanmean(metab.off_global,2))));
+
+[SNR, signal,noisesd]=op_getSNR(in,1.5,2.2,-10,-5); % get SNR of OFF peak of NAA
+
 
 end
 

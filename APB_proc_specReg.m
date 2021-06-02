@@ -2,7 +2,7 @@
 % format
 %% Display parameters
 
-spec_lb = 4;
+spec_lb = 3;
 spec_filt = 99;
 delta0 = 4.7; % is the 'default'
 
@@ -101,7 +101,7 @@ ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, 
 
 %% Shift NAA frequency to actual ppm units
 
-[metab] = spec_reference_NAA(metab,ppm_vec);
+[metab, SNR] = spec_reference_NAA(metab,ppm_vec);
 
 
 %% Automatic rejection of datasets
