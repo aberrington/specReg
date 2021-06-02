@@ -2,19 +2,24 @@
 % format
 %% Display parameters
 
-spec_lb = 5;
+spec_lb = 4;
 spec_filt = 99;
 delta0 = 4.7; % is the 'default'
+
+%% Processing parameters
+
+do_DAS = 0; % causes baseline shifts when large water peak
+
 %% Select the RAW files
 % This is for 7 T Raw files
-[data,water,info,filename] = read_sinlabraw();
+%[data,water,info,filename] = read_sinlabraw();
 
 % This is for 3 T Philips
 %[data,water,info,filename] = read_sdat();
 flag_Newcastle = 0; % Newcastle = 1
 
 % This is for GE (work in progress)
-%[data, water, info, filename] = read_GE();
+[data, water, info, filename] = read_GE();
 
 % so far not processed the NWS water references for Newc
 % some Newcastle data require a flip of everything ...
@@ -102,11 +107,11 @@ ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, 
 %% Automatic rejection of datasets
 
 % plot before rejections
-f=figure('Name', 'AutoReject Check');plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(mean(metab.on_global,2)-mean(metab.off_global,2),0,info.BW,0.10))));
+f=figure('Name', 'AutoReject Check');plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(mean(metab.on_global,2)-mean(metab.off_global,2),spec_lb,info.BW,spec_filt))));
 set(gca, 'XDir', 'reverse');xlabel('ppm');
 
-% choose Cho peak to assess outlier spectra (3.15-3.35)ppm
-P               = (ppm_vec > 3.15 & ppm_vec < 3.35);
+% choose Cho peak to assess outlier spectra (3.1-3.3)ppm
+P               = (ppm_vec > 3.1 & ppm_vec < 3.3);
 metab.concat(:,1:2:size(f_vec_off,2)*2)    = metab.off_global;
 metab.concat(:,2:2:size(f_vec_off,2)*2)    = metab.on_global;
 
@@ -171,6 +176,8 @@ metab.on_rejected = metab.on_global;
 metab.off_rejected(:, OFF_rej) = [];
 metab.on_rejected(:, ON_rej) = [];
 
+% fMRS split here
+
 s1=squeeze(mean(metab.off_rejected,2));
 s2=squeeze(mean(metab.on_rejected,2));
 
@@ -182,11 +189,16 @@ print('SpecReg/Figures/rejections_influence.pdf', '-dpdf');
 %% DAS - Final SR of ON and OFF before subtraction
 
 %Do spectralReg over Cho peak only ... 3.15 to 3.35
-for i = 1:size(s2,2)
-     [s2_cor, f_vec_local, ph_vec_local,f_align_DAS] = spec_reg_fn(s2, s1, metab.info, [3.15 3.35],1,delta0);
-end
+if(do_DAS)
+    
+    for i = 1:size(s2,2)
+         [s2_cor, f_vec_local, ph_vec_local,f_align_DAS] = spec_reg_fn(s2, s1, metab.info, [3.1 3.3],1,delta0); % previously 3.15-3.35
+    end
 figure(f_align_DAS);
 print('SpecReg/Figures/align_DAS.pdf', '-dpdf', '-fillpage');
+else
+    s2_cor = s2;
+end
 
 figure('Name', 'Final ON/OFF before subtraction');
 plot(ppm_vec, real(mrs_fft(s2_cor)));
