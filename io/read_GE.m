@@ -183,5 +183,6 @@ water   = water_shots;
 data = zeros(SV_info.num_points,nsa*2);
 data(:,1:2:end)         = all_A_nsa;
 data(:,2:2:end)         = all_B_nsa;
+
 info.BW     = SV_info.bw_Hz;
 info.transmit_frequency = SV_info.transmit_frequency;
