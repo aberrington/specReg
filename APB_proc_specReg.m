@@ -8,8 +8,8 @@ delta0 = 4.7; % is the 'default'
 
 %% Processing parameters
 
-do_DAS          = 0; % causes baseline shifts when large water peak - not recommended for GE
-fMRS_block_size = 20; % split into 8 blocks
+do_DAS          = 1; % causes baseline shifts when large water peak - not recommended for GE
+fMRS_block_size = 16; % split into 8 blocks
 
 %% Select the RAW files
 % This is for 7 T Raw files

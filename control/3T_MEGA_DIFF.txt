@@ -1,3 +1,4 @@
+ SPTYPE='mega-press-3'
  PPMSHF=0.0
  PPMEND=0.2
  PPMST=4.2

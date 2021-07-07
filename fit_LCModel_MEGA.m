@@ -95,19 +95,19 @@ for n = 1:(numBlockAnalyses + 1)
         
         % Concentration corrections - these are not done on GE data... leave
         % them here
-    %     T2metab     =   9999999; %values from Lactate at 7T
-    %     T2water     =   88; %values from Michaeli
-    %     tissuewatercontent  = 0.819;  % tissue water content may vary depending on the brain region. (eg 0.71 for pure white matter, 0.81 for pure grey matter)
-    %     CSFwatercontent     = 1;      % assuming CSF is pure water
-    %     CSFfrac             = 0;      % CSF fraction
-    %     attmet              = ntmetab*exp(-TE/T2metab);
-    %     concpurewater       = 55555;  % concentration of pure water in mM
-    %     atth2o              = ntwater*exp(-TE/T2water);
-    %     atth2o              = atth2o(:,1);
-    %     %factor of 1.15 from Michaeli MRM 2003 estimated at 3T
-    %     %atth2o = data.ntws;%comment
-    %     wconc   = concpurewater * (CSFfrac*CSFwatercontent + (1-CSFfrac)*tissuewatercontent);
-    %     wconc   = wconc./(1-CSFfrac);
+%         T2metab     =   9999999; %values from Lactate at 7T
+%         T2water     =   88; %values from Michaeli
+%         tissuewatercontent  = 0.819;  % tissue water content may vary depending on the brain region. (eg 0.71 for pure white matter, 0.81 for pure grey matter)
+%         CSFwatercontent     = 1;      % assuming CSF is pure water
+%         CSFfrac             = 0;      % CSF fraction
+%         attmet              = ntmetab*exp(-TE/T2metab);
+%         concpurewater       = 55555;  % concentration of pure water in mM
+%         atth2o              = ntwater*exp(-TE/T2water);
+%         atth2o              = atth2o(:,1);
+%     %     %factor of 1.15 from Michaeli MRM 2003 estimated at 3T
+%     %     %atth2o = data.ntws;%comment
+%         wconc   = concpurewater * (CSFfrac*CSFwatercontent + (1-CSFfrac)*tissuewatercontent);
+%         wconc   = wconc./(1-CSFfrac);
 
         % Make LCModel Control file
         fileid      =   fopen([fPath{n} '/' savename '.CONTROL'],'w');
@@ -121,7 +121,6 @@ for n = 1:(numBlockAnalyses + 1)
         fprintf(fileid,[' ECHOT=' num2str(TE) '\n']);
         
         if(i==1)
-            fprintf(fileid,' SPTYPE=''mega-press-3''\n');
             print_control(fileid, fieldS, 'MEGA_DIFF');
         else
             print_control(fileid, fieldS, 'MEGA_OFF');
