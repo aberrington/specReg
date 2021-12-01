@@ -8,19 +8,20 @@ delta0 = 4.7; % is the 'default'
 
 %% Processing parameters
 
-do_DAS          = 0; % causes baseline shifts when large water peak - not recommended for GE
-fMRS_block_size = 0; % split into 8 blocks
+do_DAS          = 1; % causes baseline shifts when large water peak - not recommended for GE
+fMRS_block_size = 41; % split into 8 blocks
 
 %% Select the RAW files
 % This is for 7 T Raw files
 %[data,water,info,filename] = read_sinlabraw();
+[data, water, info, filename] = read_datalist();
 
 % This is for 3 T Philips
 %[data,water,info,filename] = read_sdat();
 flag_Newcastle = 0; % Newcastle = 1
 
 % This is for GE (work in progress)
-[data, water, info, filename] = read_GE();
+%[data, water, info, filename] = read_GE();
 
 % so far not processed the NWS water references for Newc
 % some Newcastle data require a flip of everything ...
@@ -232,7 +233,7 @@ if(fMRS_block_size > 0) % if splitting into Blocks
     s1 = squeeze(nanmean(metab.off_rejected_blocks,2));
     s2 = squeeze(nanmean(metab.on_rejected_blocks,2));
 
-    s2_cor = run_DAS(s1, s2, metab, delta0, do_DAS); % DAS alignment
+    s2_cor = run_DAS(s1, s2, metab, delta0, 0); % DAS alignment - OFF for fMRS
     
     metab   = save_param(metab, s1,s2_cor);
     save_diff_mat(s1, s2_cor, block_path);

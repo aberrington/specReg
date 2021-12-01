@@ -5,14 +5,55 @@ zf_factor=1;
 
 %% read data
 if nargin==0
-    [filename,filepath]=uigetfile('*.7', 'Select GE Pfile','/home/acrad/Rdrive/Academic-Radiology');
+    [filename,filepath]=uigetfile('*.7;*.h5', 'Select GE Pfile or ScanArchive','/home/acrad/Rdrive/Academic-Radiology');
 end
 
-header=read_MR_headers([filepath,filename],'all');
-%% MRS acquisition info
-disp('-----------')
-disp([filename,':'])
-get_MRS_info(header);
+[a b c] = fileparts(filename);
+
+if(strcmp(c, '.h5'))
+    disp('ScanArchive Detected');
+    [d,header,archive]=read_archive([filepath, filename]);
+    
+    [Nshots, Npoints, Nphase, Nechoes, Nslice, Nchannels] =  size(d);
+    
+    disp('-----------')
+    disp([filename,':'])
+    get_MRS_info(header);
+    SV_info.num_points = Npoints; 
+    SV_info.bw_Hz  = header.rdb_hdr.user0;
+    SV_info.coils = Nchannels;
+    SV_info.transmit_frequency = -header.rdb_hdr.ps_mps_freq/10;
+    SV_info.nex = header.rdb_hdr.navs;
+    SV_info.chop = header.rdb_hdr.user41;                            % chop due to no_add data
+    if (SV_info.chop)
+        SV_info.nsa  = header.rdb_hdr.user4;                        % with no_add option
+    else    
+        SV_info.nsa  = header.rdb_hdr.user4/header.rdb_hdr.navs;    % data frames
+    end
+    ppm=(linspace(SV_info.bw_Hz/2000,-SV_info.bw_Hz/2000,zf_factor*SV_info.num_points)/(128*10^3))*10^6+4.7;
+
+    all_spectra = squeeze(d);
+    all_spectra = fftshift(fft(all_spectra,[],2),2);
+    
+    water_A = squeeze(all_spectra(1:SV_info.nex,:,1,:));
+    water_B = squeeze(all_spectra(1:SV_info.nex,:,2,:));    
+    metabo_A = squeeze(all_spectra((SV_info.nex+1):end,:,1,:));
+    metabo_B = squeeze(all_spectra((SV_info.nex+1):end,:,2,:));
+    
+    water_A = permute(water_A, [2,1,3]);
+    water_B = permute(water_B, [2,1,3]);
+    metabo_A = permute(metabo_A, [2,1,3]);
+    metabo_B = permute(metabo_B, [2,1,3]);
+    
+    water=[water_A water_B];
+    
+elseif(strcmp(c, '.7'))
+    disp('P-file Detected');    
+    header=read_MR_headers([filepath,filename],'all');
+    %% MRS acquisition info
+    disp('-----------')
+    disp([filename,':'])
+    get_MRS_info(header);
 
 SV_info.num_points=header.rdb_hdr.frame_size; 
 SV_info.bw_Hz=header.rdb_hdr.user0;
@@ -71,6 +112,7 @@ clear raw_data
 clear fid_processed
 clear fid
 
+
 %% sort data into water (WS) and metabo (nonWS)
 % B is unedited and A is edited (might be the other way around depending on
 % scanner settings)
@@ -89,6 +131,10 @@ end
 water=[water_A water_B];
 
 clear all_spectra
+
+else
+    error('FileType not recognised');
+end
 %% Klose ECC correction=0 order phasing --> only on water averages thus not very accurate but looks like method of choice
 % set1 and set2 are used because there is a 180degree phase shift in the data   
 water_set1_coil=squeeze(mean(water(:,1:2:end,:),2));
@@ -148,7 +194,7 @@ for nsa=1:SV_info.nsa
     all_A_nsa(:,nsa)=dummy*coil_w';  
     dummy=squeeze(metabo_phase_B(:,nsa,:));
     all_B_nsa(:,nsa)=dummy*coil_w';  
-    
+    nsa
     SNR(nsa)=get_SNR(ppm,all_A_nsa(:,nsa));
 end
 [~,m]=max(SNR);
