@@ -3,13 +3,13 @@
 %% Display parameters
 
 spec_lb = 3;
-spec_filt = 99;
+spec_filt = 0.12;
 delta0 = 4.7; % is the 'default'
 
 %% Processing parameters
 
 do_DAS          = 1; % causes baseline shifts when large water peak - not recommended for GE
-fMRS_block_size = 41; % split into 8 blocks
+fMRS_block_size = 0; % split into 8 blocks
 
 %% Select the RAW files
 % This is for 7 T Raw files
@@ -20,7 +20,7 @@ fMRS_block_size = 41; % split into 8 blocks
 %[data,water,info,filename] = read_sdat();
 flag_Newcastle = 0; % Newcastle = 1
 
-% This is for GE (work in progress)
+% This is for GE (work in progress)  
 %[data, water, info, filename] = read_GE();
 
 % so far not processed the NWS water references for Newc
@@ -199,6 +199,8 @@ end
 [water_aligned, f_vec, p_vec, f_align]    = spec_reg_fn(waterf, waterf(:,1), metab.info, [3 6.5], 0, delta0);
 waterfid = mean(water_aligned,2); % average water acquisitions
 txfrq = info.transmit_frequency;
+
+[LW] = meas_LW_water(waterf, metab,ppm_vec);
 
 %% fMRS split here
 if(fMRS_block_size > 0) % if splitting into Blocks

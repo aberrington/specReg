@@ -1,4 +1,3 @@
- SPTYPE='mega-press-3' 
  PPMSHF=0.0
  PPMEND=1.8
  PPMST=4.2
@@ -23,3 +22,6 @@
  DOECC=F
  ATTH2O=1
  WCONC=55555
+ SPTYPE='mega-press-3'
+ NOBASE=F
+ USEMXB=T
