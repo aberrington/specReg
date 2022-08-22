@@ -24,9 +24,9 @@ for i = 1:size(metab.off_global,2)
 end
 
 in.ppm = ppm_vec';
-in.specs = conj(mrs_fft(squeeze(nanmean(metab.off_global,2))));
+in.specs = conj(mrs_fft(squeeze(mean(metab.off_global,2, 'omitnan'))));
 
-[SNR, signal,noisesd]=op_getSNR(in,1.5,2.2); % get SNR of OFF peak of NAA
+[SNR, signal,noisesd]=op_getSNR_specReg(in,1.5,2.2); % get SNR of OFF peak of NAA
 
 
 end
