@@ -1,5 +1,4 @@
-% APB: Script to processes the MEGA-sLASER data for 7 T data using Raw
-% format
+% APB: Script to processes the MEGA data
 %% Display parameters
 
 spec_lb = 3;

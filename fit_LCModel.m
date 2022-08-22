@@ -60,7 +60,7 @@ for i = 1
 
     fprintf(fileid,' $LCMODL\n');
     fprintf(fileid,[' TITLE=''' savename '''\n']);
-    %fprintf(fileid,' KEY=217638264\n');  % Key for Bernoulli
+    fprintf(fileid,' KEY=210387309\n');  % Key for LCModel
     fprintf(fileid,' PGNORM=''US''\n');
     fprintf(fileid,[' FILPS=''' savename '.PS''\n']);
     fprintf(fileid,[' FILCOO=''' savename '.COORD''\n']);
