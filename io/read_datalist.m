@@ -2,7 +2,7 @@
 function [data water info filename] = read_datalist()
 
 if nargin==0
-    [filename,filepath]=uigetfile('*data', 'Select .data file');
+    [filename,filepath]=uigetfile('*.data', 'Select .data file');
 end
 
 [data_fid, water_fid, params] = process_raw_philips(0, filename);
