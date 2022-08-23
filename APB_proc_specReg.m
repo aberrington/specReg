@@ -164,9 +164,9 @@ OFF_rej = [];
 ON_rej  = [];
 for r=1:length(rej_idx)
     if(mod(rej_idx(r),2)) % this is odd = OFF
-        OFF_rej = 1+(rej_idx(r)-1)/2;
+        OFF_rej = [OFF_rej 1+(rej_idx(r)-1)/2];
     else
-        ON_rej = rej_idx(r)/2;
+        ON_rej = [ON_rej rej_idx(r)/2];
     end
 end
 
