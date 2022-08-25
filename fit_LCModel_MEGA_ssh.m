@@ -16,6 +16,8 @@ HOSTNAME = 'cador.magres.nottingham.ac.uk';
 %%
 ssh2_conn = ssh2_config(HOSTNAME,USR,PASSWD);
 ssh2_conn = ssh2_command(ssh2_conn, 'mkdir lcm_fit; mkdir lcm_fit/LCModel',1);
+% remove files from any previous run
+ssh2_conn = ssh2_command(ssh2_conn, 'rm lcm_fit/LCModel/*',1);
 
 % find the run_lcmodel.sh script and put it in the lcm_fit folder
 specRegPath = fileparts(which('fit_LCModel_MEGA'));
