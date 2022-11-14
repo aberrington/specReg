@@ -262,13 +262,12 @@ disp('LCModel fitting complete')
 
 disp('Copying files to local machine');
 
-pdf_list = append_filetype(savename_list, '.pdf');
-COORD_list = append_filetype(savename_list, '.COORD');
-PRINT_list = append_filetype(savename_list, '.PRINT');
+pdf_list    = append_filetype(savename_list, '.pdf');
+COORD_list  = append_filetype(savename_list, '.COORD');
+PRINT_list  = append_filetype(savename_list, '.PRINT');
  
-ssh2_conn = scp_get(ssh2_conn, pdf_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
-ssh2_conn = scp_get(ssh2_conn, COORD_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
-ssh2_conn = scp_get(ssh2_conn, PRINT_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, pdf_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, COORD_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, PRINT_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
 
 clear all
-

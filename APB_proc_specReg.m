@@ -144,7 +144,7 @@ labelRej{1} = 'Mean';
 if(~isempty(rej_idx))
 disp('****')
     for r = 1:length(rej_idx)
-        disp(['Removing shot ' num2str(rej_idx(r)) ' z-stat: ' num2str(zMSE(rej_idx))])
+        disp(['Removing shot ' num2str(rej_idx(r)) ' z-stat: ' num2str(zMSE(rej_idx(r)))])
         plot(ppm_vec, real(mrs_fft(broaden_filter_FID_sw(metab.concat(:,r),0, info.BW, 0.10))));
         labelRej{r+1} = num2str(rej_idx(r));
     end
