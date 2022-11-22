@@ -2,7 +2,7 @@
 %% https://onlinelibrary.wiley.com/doi/10.1002/nbm.4257
 clear all
 
-filepath = 'SpecReg/LCModel';
+filepath = 'SpecReg/STEAM/LCModel';
 
 % fit diff and also off
 %% Get sequence parameters
@@ -10,17 +10,11 @@ filepath = 'SpecReg/LCModel';
 
 disp(['Found TE/TR (ms): ' num2str(TE) '/' num2str(TR)]);
 
-specType = {'diff', 'off'};
-mkdir('SpecReg/Quant');
-
-for i = 1:2
-    fileName = ['raw_' specType{i}];
+mkdir('SpecReg/STEAM/Quant');
+    fileName = ['raw'];
 
     [lcmoutput, nmetabs] = readcoord([filepath '/' fileName '.COORD']);
 
-    if(i==1 && nmetabs~=9)
-        disp('Wrong number of metabolites - something maybe went wrong - check output')    
-    end
 
     % print csv file
     %% Read water T2 values - expected in the working folder
@@ -89,10 +83,6 @@ for i = 1:2
         Scaled_Conc(n) = LCM_Conc(n) * (frac.GM(1)*density.d_GM*RH2O.GM ... 
                 + frac.WM(1)*density.d_WM*RH2O.WM ...
                 + frac.CSF(1)*density.d_CSF*RH2O.CSF)/((1-frac.CSF)*RMETAB);
-
-        if(i==1) % if difference spectrum
-            Scaled_Conc(n) = Scaled_Conc(n) * 2; % multiply by 2 for difference spectrum (made of 2 spectra)
-        end
         
         Metabolite(n) = m_string;
         
@@ -107,12 +97,11 @@ for i = 1:2
     
     varNames = {'Metabolite','CRLB','Relative Concentration', 'LCModel Concetration', 'Estimated Tissue Corrected Concentration (mM)'};
     T = table(Metabolite, CRLB, LCM_Relative, LCM_Conc, EstConc', 'VariableNames', varNames);
-    writetable(T, ['SpecReg/Quant/' specType{i} '_concs.csv'])
+    writetable(T, ['SpecReg/STEAM/Quant/concs.csv'])
 
-end
     % read in file raw_diff and raw_off
     % perform corrections
-
+    clear
 % write to a csv file
 function RMETAB = calc_relax_metab(metabname, relaxM, TE, TR)
 

@@ -1,4 +1,4 @@
-function [fids_aligned, f_vec, ph_vec, fig_align] = spec_reg_fn(fids, template, info, freq_range, isCut, delta0)
+function [fids_aligned, f_vec, ph_vec, fig_align] = spec_reg_fn(fids, template, info, freq_range, isCut, delta0, cutDur)
 % This script is going to do spectral registration algorithm of all fids to
 % a template. Can limit this over a certain range (ppm).
 % based on Near et al. (2015)
@@ -6,6 +6,9 @@ function [fids_aligned, f_vec, ph_vec, fig_align] = spec_reg_fn(fids, template, 
 % fids: this is the time domain FID data
 % template: this is the template to align to
 % need to restrict frequency firstly fft, then cut, then ifft
+if(nargin<7)
+    cutDur = 0.2; % 200ms as default
+end
 if(nargin<6)
     delta0 = 4.7;
 end
@@ -22,7 +25,7 @@ t2 = dt*(0:(size(fids,1)-1))';
 template_zf = mrs_zerofill(template, 0);
 fids_zf  = mrs_zerofill(fids, 0);
 if(isCut)
-    cut_spec = 0.2/dt;
+    cut_spec = cutDur/dt;
 else
     cut_spec = size(template,1);
 end

@@ -2,7 +2,7 @@ function [TE, TR, B0] = readSPAR(~)
 
 %nummetab=24;
 fid = -1;
-dirs = uipickfiles('Prompt', 'Choose corresponding MEGA SPAR file', 'FilterSpec', '*.SPAR');
+dirs = uipickfiles('Prompt', 'Choose corresponding SPAR file', 'FilterSpec', '*.SPAR');
 
 s=fileread(dirs{1});
 TE = regexp(s,'echo_time : (\w*)','tokens');

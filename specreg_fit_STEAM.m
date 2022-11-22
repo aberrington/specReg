@@ -20,7 +20,7 @@ ssh2_conn = ssh2_command(ssh2_conn, 'mkdir lcm_fit; mkdir lcm_fit/LCModel',1);
 ssh2_conn = ssh2_command(ssh2_conn, 'rm lcm_fit/LCModel/*',1);
 
 % find the run_lcmodel.sh script and put it in the lcm_fit folder
-specRegPath = fileparts(which('fit_LCModel_MEGA'));
+specRegPath = fileparts(which('specreg_fit_STEAM'));
 ssh2_conn = scp_put(ssh2_conn, 'run_lcmodel.sh', 'lcm_fit/.', [specRegPath '/cmd']);
 
 % cador space
@@ -31,14 +31,14 @@ ssh2_conn = scp_put(ssh2_conn, 'run_lcmodel.sh', 'lcm_fit/.', [specRegPath '/cmd
 
 %%
 % Make an LCModel folder in SpecReg
-filepath = 'SpecReg/LCModel';
+filepath = 'SpecReg/STEAM/LCModel';
 mkdir(filepath);
 
 % Get all the processed files
-D       =   dir('SpecReg/Data/*.spa');
-C       =   strsplit(D(1).name,'_');
+D       =   dir('SpecReg/STEAM/Data/*.spa');
+C       =   strsplit(D(1).name,'.');
 
-b = dir('SpecReg/Data/Block/'); % Search for block (fMRS analysis)
+b = dir('SpecReg/STEAM/Data/Block/'); % Search for block (fMRS analysis)
 numBlockAnalyses = length(b)-2;
 
 if(numBlockAnalyses>0) % 3rd position since .. and . are directories...
@@ -49,23 +49,22 @@ else
     numBlockAnalyses =0;
 end
 
-fName{1} = ['SpecReg/Data/' C{1}];
-fPath{1} = 'SpecReg/LCModel';
+fName{1} = ['SpecReg/STEAM/Data/' C{1}];
+fPath{1} = 'SpecReg/STEAM/LCModel';
     
 for k = 1:(numBlockAnalyses)
-    fName{k+1} = ['SpecReg/Data/Block/' BlockName{k} '/' C{1}];
-    fPath{k+1} = ['SpecReg/LCModel/Block/' BlockName{k}];
+    fName{k+1} = ['SpecReg/STEAM/Data/Block/' BlockName{k} '/' C{1}];
+    fPath{k+1} = ['SpecReg/STEAM/LCModel/Block/' BlockName{k}];
     mkdir(fPath{k+1});
 end
 
-specType = {'diff', 'off'};
+
 ii=1;
 
 for n = 1:(numBlockAnalyses + 1)
     
-    for i = 1:2
 
-        fileName = [fName{n} '_' specType{i}];
+        fileName = [fName{n}];
 
         load([fileName '.spa'], '-mat');
 
@@ -74,9 +73,9 @@ for n = 1:(numBlockAnalyses + 1)
         for s = 1:nSpec
            
             if(nSpec == 1)
-                savename = [C{1} '_' specType{i}];
+                savename = [C{1} ];
             else
-                savename = [C{1} '_' specType{i} '_' num2str(s)];
+                savename = [C{1} '_' num2str(s)];
             end
 
         specData    = data.metab(:,s); % spec data
@@ -89,7 +88,7 @@ for n = 1:(numBlockAnalyses + 1)
         sw          =   data.params(2);
         sfrq        =   abs(data.params(1)); % in Hz / ppm for LCModel
         
-        if(data.params(1) > 290) % This is 7T
+        if(abs(data.params(1)) > 290) % This is 7T
            fieldS = 7;
         else
            fieldS = 3; 
@@ -100,26 +99,19 @@ for n = 1:(numBlockAnalyses + 1)
             specData    =   specData'; % currently need transpose for 3T GE dataset
             waterData   =   waterData';
         else
-            TE          =   72;
+            TE          =   14;
         end
         
         fid2raw_adam(fPath{n}, savename, specData') % IDX may change
         fid2h2o_adam(fPath{n}, savename, waterData');
 
         % Change to where basis is located on server
-        if(i==1)
+
             if(fieldS==3)
-                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3t_GE_MEGAPRESS_june2011_diff';
+               disp('3T detected - please check data')
             else
-               tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_MEGAsLASER_72ms_DIFF_2021';
+               tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/STEAM_TE14_TM16_withMM_7T';
             end
-        else
-            if(fieldS==3)
-                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_PRESS68_no_LMM';
-            else
-                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_MEGAsLASER_72ms_OFF_2021';
-            end
-        end
         
         % Concentration corrections - these are not done on GE data... leave
         % them here
@@ -147,27 +139,9 @@ for n = 1:(numBlockAnalyses + 1)
         fprintf(fileid,[' FILPS=''' savename '.PS''\n']);
         fprintf(fileid,[' FILCOO=''' savename '.COORD''\n']);
         fprintf(fileid,[' ECHOT=' num2str(TE) '\n']);
+       
+        print_control(fileid, fieldS, 'STEAM_14ms');
         
-        if(i==1)
-            print_control(fileid, fieldS, 'MEGA_DIFF');
-        else
-            print_control(fileid, fieldS, 'MEGA_OFF');
-        end
-        
-        
-        %fprintf(fileid,' IAVERG=3\n');
-        %fprintf(fileid,' VITRO=T\n');
-%         fprintf(fileid,' PPMSHF=0.0\n');
-%         fprintf(fileid,' PPMEND=0.2\n');
-%         fprintf(fileid,' PPMST=4.0\n');
-%         if(i==1)
-%         fprintf(fileid,' PPMGAP(1,1)=1.95\n');
-%         fprintf(fileid,' PPMGAP(2,1)=1.2\n');
-%         end
-%         
-%         if(i==1)
-%             %fprintf(fileid,' DKNTMN=999\n');
-%         end
 %             
 %         fprintf(fileid,' RFWHM=3\n');
 %         fprintf(fileid,' FWHMBA=0.0050\n');
@@ -237,7 +211,6 @@ for n = 1:(numBlockAnalyses + 1)
         % run LCModel
         end
 
-    end
 
 end
 
@@ -251,7 +224,7 @@ end
 %ssh2_conn = ssh2_config(HOSTNAME,USR,PASSWD);
 % to access the first response, one can use:
 %copy over LCModel folder
-LCModeldir = dir('SpecReg/LCModel/');
+LCModeldir = dir('SpecReg/STEAM/LCModel/');
 filenames = {LCModeldir.name};
 % transfer to LCModel folder on remote
 disp('Transfering files')
@@ -266,8 +239,8 @@ pdf_list    = append_filetype(savename_list, '.pdf');
 COORD_list  = append_filetype(savename_list, '.COORD');
 PRINT_list  = append_filetype(savename_list, '.PRINT');
  
-ssh2_conn   = scp_get(ssh2_conn, pdf_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
-ssh2_conn   = scp_get(ssh2_conn, COORD_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
-ssh2_conn   = scp_get(ssh2_conn, PRINT_list,'specReg/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, pdf_list,'specReg/STEAM/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, COORD_list,'specReg/STEAM/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, PRINT_list,'specReg/STEAM/LCModel/', 'lcm_fit/LCModel/');
 
-clear all
+clear
