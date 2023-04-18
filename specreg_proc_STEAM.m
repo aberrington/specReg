@@ -1,4 +1,4 @@
-% APB: Script to processes the MEGA data
+% APB: Script to processes the single shot data
 %% Display parameters
 
 spec_lb = 3;
@@ -13,7 +13,6 @@ delta0 = 4.7; % is the 'default'
 
 % This is for 3 T Philips
 %[data,water,info,filename] = read_sdat();
-
 
 % This is for GE (work in progress)  
 %[data, water, info, filename] = read_GE();

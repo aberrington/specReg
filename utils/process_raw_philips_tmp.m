@@ -12,8 +12,7 @@
 function [metabfid, waterfid, params] = process_raw_philips(save_spa, fname, isHadamard)
 
     save_uncombined     =   1; % optional flag to save .mat data of uncombined coil data
-    picksdat = 1;
-    
+
 if(nargin<3)
     isHadamard = 0;
 end
@@ -35,7 +34,7 @@ if(save_spa || save_uncombined)
     a       = dir('*raw_act.SDAT');
     nfiles  = size(a,1);
     
-    if(nfiles > 0 && picksdat ~= 1)
+    if(nfiles > 0)
         disp(['Using 1st SDAT in folder for header information: ' a(1).name])
         dirs_sdat = {[a(1).folder '/' a(1).name]};
     else
@@ -229,7 +228,7 @@ else
 
     for n = 1:nav
         disp(num2str(n));
-        [outfid_weighted(:,n), outfid_unweighted(:,n), weights, outfid_wref(:,1)]   =   sum_phased_array(squeeze(metabfid(:,n,:))', squeeze(waterfid(:,1,:))', 1, 0);
+        [outfid_weighted(:,n), outfid_unweighted(:,n), weights, outfid_wref(:,1)]   =   sum_phased_array(squeeze(metabfid(2:end,n,:))', squeeze(waterfid(2:end,1,:))', 1, 0);
         outfid_ecc(:,n) = spec_ecc_cor(outfid_weighted(:,n), outfid_wref(:,1),0,0);
     end
 
@@ -237,7 +236,7 @@ else
     for m = 2:nwater
         % correct remaining water scans
         disp(num2str(m-1));
-        [outfid_wref(:,m), ~, ~, ~]         =   sum_phased_array(squeeze(waterfid(:,m,:))', squeeze(waterfid(:,1,:))', 1, 0);
+        [outfid_wref(:,m), ~, ~, ~]         =   sum_phased_array(squeeze(waterfid(2:end,m,:))', squeeze(waterfid(2:end,1,:))', 1, 0);
         outfid_wref_ecc(:,m-1)              =   spec_ecc_cor(outfid_wref(:,m),outfid_wref(:,1),0,0); % have to now throw away 1st water scan
     end
     

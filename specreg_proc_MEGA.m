@@ -4,22 +4,22 @@
 spec_lb = 3;
 spec_filt = 0.12;
 delta0 = 4.7; % is the 'default'
-
 %% Processing parameters
 
-do_DAS          = 1; % causes baseline shifts when large water peak - not recommended for GE
+do_DAS          = 0; % causes baseline shifts when large water peak - not recommended for GE
 fMRS_block_size = 0; % split into 8 blocks
 
 %% Select the RAW files
 % This is for 7 T Raw files
 %[data,water,info,filename] = read_sinlabraw();
-[data, water, info, filename] = read_datalist();
-
+%[data, water, info, filename] = read_datalist();
+%data=-1*data
 % This is for 3 T Philips
-%[data,water,info,filename] = read_sdat();
+[data,water,info,filename] = read_sdat();
 flag_Newcastle = 0; % Newcastle = 1
 
 % This is for GE (work in progress)  
+
 %[data, water, info, filename] = read_GE();
 
 % so far not processed the NWS water references for Newc

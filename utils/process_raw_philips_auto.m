@@ -9,12 +9,11 @@
 %           waterfid        uncombined water fids
 %           params          parameters for MRspa
 
-function [metabfid, waterfid, params] = process_raw_philips(save_spa, fname, isHadamard)
+function [metabfid, waterfid, params] = process_raw_philips_auto(save_spa, fname, sdatname, isHadamard)
 
     save_uncombined     =   1; % optional flag to save .mat data of uncombined coil data
-    picksdat = 1;
     
-if(nargin<3)
+if(nargin<4)
     isHadamard = 0;
 end
     
@@ -31,16 +30,9 @@ end
 if(save_spa || save_uncombined)
     % if saving a spa file - requires header from the corresponding SDAT
     % file to get relavant parameters
-
-    a       = dir('*raw_act.SDAT');
-    nfiles  = size(a,1);
     
-    if(nfiles > 0 && picksdat ~= 1)
-        disp(['Using 1st SDAT in folder for header information: ' a(1).name])
-        dirs_sdat = {[a(1).folder '/' a(1).name]};
-    else
-        dirs_sdat = uipickfiles('Prompt', ['Please pick equivalent sdat file for information'], 'FilterSpec', '*.SDAT');
-    end
+    dirs_sdat = {sdatname};
+
 end
 
 for d = 1:length(dirs)
@@ -58,7 +50,7 @@ type        = 'float';
 disp('Reading scan parameters...')
 
 
-fname_scan_params   = [this_file(1:(end-4)),'list']; % file name .list
+fname_scan_params   = [a '/' this_file(1:(end-4)),'list']; % file name .list
 scan_params         = textread(fname_scan_params, '%s'); % read whole .list file
 
 % find the number of points in each FID
@@ -78,7 +70,7 @@ tot_offsets         = (str2num(tot_offset_idx{1}) - offset)/sizebyte + 1; % The 
 
 disp('Reading data...')
 
-fp                  = fopen(this_file, 'rb', endian);
+fp                  = fopen([a '/' this_file], 'rb', endian);
 fseek(fp, offset, -1); % Move to the first offset of data
 
 % read in the data (2048 * number of offsets)
