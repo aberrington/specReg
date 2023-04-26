@@ -37,6 +37,7 @@ mkdir(filepath);
 % Get all the processed files
 D       =   dir('SpecReg/MEGA/Data/*.spa');
 C       =   strsplit(D(1).name,'_');
+C_cl    =   regexprep(C, '(\(|\))', '');
 
 b = dir('SpecReg/MEGA/Data/Block/'); % Search for block (fMRS analysis)
 numBlockAnalyses = length(b)-2;
@@ -74,9 +75,9 @@ for n = 1:(numBlockAnalyses + 1)
         for s = 1:nSpec
            
             if(nSpec == 1)
-                savename = [C{1} '_' specType{i}];
+                savename = [C_cl{1} '_' specType{i}];
             else
-                savename = [C{1} '_' specType{i} '_' num2str(s)];
+                savename = [C_cl{1} '_' specType{i} '_' num2str(s)];
             end
 
         specData    = data.metab(:,s); % spec data
@@ -266,8 +267,8 @@ pdf_list    = append_filetype(savename_list, '.pdf');
 COORD_list  = append_filetype(savename_list, '.COORD');
 PRINT_list  = append_filetype(savename_list, '.PRINT');
  
-ssh2_conn   = scp_get(ssh2_conn, pdf_list,'specReg/MEGA/LCModel/', 'lcm_fit/LCModel/');
-ssh2_conn   = scp_get(ssh2_conn, COORD_list,'specReg/MEGA/LCModel/', 'lcm_fit/LCModel/');
-ssh2_conn   = scp_get(ssh2_conn, PRINT_list,'specReg/MEGA/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, pdf_list,'SpecReg/MEGA/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, COORD_list,'SpecReg/MEGA/LCModel/', 'lcm_fit/LCModel/');
+ssh2_conn   = scp_get(ssh2_conn, PRINT_list,'SpecReg/MEGA/LCModel/', 'lcm_fit/LCModel/');
 
 clear all
