@@ -42,7 +42,7 @@ mkdir([filepath '/Data']);
 %% Do an ECC correction
 % do it on the data
 data = mrs_ifft(data); % convert to FID
-data = spa_eddyCor2(mrs_ifft(water(:,2)),data); % Use one of the water refs
+data = spa_eddyCor2(mrs_ifft(water(:,1)),data); % Use one of the water refs
 data = mrs_fft(data); % convert back
 
 
@@ -160,7 +160,7 @@ metab.global_rejected(:, rej_idx) = [];
 
     % Do ECC of water reference
 waterf = mrs_ifft(water); % convert to FID
-waterf = spa_eddyCor2(waterf(:,2),waterf); % Eddy current corretion
+waterf = spa_eddyCor2(waterf(:,1),waterf); % Eddy current corretion
 
 
 % need to correct water references

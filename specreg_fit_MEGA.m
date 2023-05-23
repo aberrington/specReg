@@ -98,8 +98,8 @@ for n = 1:(numBlockAnalyses + 1)
         
         if(fieldS==3)
             TE          =   68; % 7T is 72, 3T is 68
-            specData    =   specData'; % currently need transpose for 3T GE dataset
-            waterData   =   waterData';
+            specData    =   specData; % currently need transpose for 3T GE dataset
+            waterData   =   waterData;
         else
             TE          =   72;
         end

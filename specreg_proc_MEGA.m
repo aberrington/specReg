@@ -19,7 +19,6 @@ fMRS_block_size = 0; % split into 8 blocks
 flag_Newcastle = 0; % Newcastle = 1
 
 % This is for GE (work in progress)  
-
 %[data, water, info, filename] = read_GE();
 
 % so far not processed the NWS water references for Newc

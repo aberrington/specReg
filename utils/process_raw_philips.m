@@ -234,6 +234,13 @@ else
     end
 
     disp('Weighting and ECC average water scan... ');
+    
+    if(nwater==1)
+        disp('Only 1 water reference found')
+        [outfid_wref(:,1), ~, ~, ~]         =   sum_phased_array(squeeze(waterfid(:,1,:))', squeeze(waterfid(:,1,:))', 1, 0);
+        outfid_wref_ecc(:,1)                =   spec_ecc_cor(outfid_wref(:,1),outfid_wref(:,1),0,0); % have to now throw away 1st water scan
+    end
+    
     for m = 2:nwater
         % correct remaining water scans
         disp(num2str(m-1));
