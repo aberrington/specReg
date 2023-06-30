@@ -33,6 +33,8 @@ ssh2_conn = scp_put(ssh2_conn, 'run_lcmodel.sh', 'lcm_fit/.', [specRegPath '/cmd
 % Make an LCModel folder in SpecReg
 filepath = 'SpecReg/MEGA/LCModel';
 mkdir(filepath);
+isNewcastle = 0;
+isGE = 1;
 
 % Get all the processed files
 D       =   dir('SpecReg/MEGA/Data/*.spa');
@@ -80,8 +82,11 @@ for n = 1:(numBlockAnalyses + 1)
                 savename = [C_cl{1} '_' specType{i} '_' num2str(s)];
             end
 
+        
         specData    = data.metab(:,s); % spec data
         waterData   = data.ws; % water data
+        
+        
         nbpoints    =   size(specData, 1); % number of samples
         % these should = 1
         ntmetab     =   data.ntmetab; % only 1 metab - seems to be averaged to 1: specData.spectralaverages; % number of averages
@@ -98,8 +103,10 @@ for n = 1:(numBlockAnalyses + 1)
         
         if(fieldS==3)
             TE          =   68; % 7T is 72, 3T is 68
-            specData    =   specData; % currently need transpose for 3T GE dataset
-            waterData   =   waterData;
+            if(isGE)
+                specData    =   specData'; % currently need transpose for 3T GE dataset
+                waterData   =   waterData';
+            end
         else
             TE          =   72;
         end
@@ -110,13 +117,25 @@ for n = 1:(numBlockAnalyses + 1)
         % Change to where basis is located on server
         if(i==1)
             if(fieldS==3)
-                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3t_GE_MEGAPRESS_june2011_diff';
+                if(isGE)
+                    tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3t_GE_MEGAPRESS_june2011_diff';
+                elseif(isNewcastle)
+                    tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_MEGAPRESS_Newcastle_68ms_DIFF_2023';
+                else
+                    tes_basis(1).te     = '/home/bbzapb/bases/3T_MEGAPRESS_Nottingham_68ms_DIFF_2023';
+                end
             else
                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_MEGAsLASER_72ms_DIFF_2021';
             end
         else
             if(fieldS==3)
-                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_PRESS68_no_LMM';
+                if(isGE)    
+                    tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_PRESS68_no_LMM';
+                elseif(isNewcastle)
+                    tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_MEGAPRESS_Newcastle_68ms_OFF_2023';
+                else
+                    tes_basis(1).te     = '/home/bbzapb/bases/3T_MEGAPRESS_Nottingham_68ms_OFF_2023';
+                end
             else
                 tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_MEGAsLASER_72ms_OFF_2021';
             end

@@ -110,7 +110,7 @@ for n = 1:(numBlockAnalyses + 1)
             if(fieldS==3)
                disp('3T detected - please check data')
             else
-               tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/STEAM_TE14_TM16_withMM_7T';
+               tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_sLASER_30ms_GOIA5010';
             end
         
         % Concentration corrections - these are not done on GE data... leave

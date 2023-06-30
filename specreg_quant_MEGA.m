@@ -7,14 +7,14 @@ filepath = 'SpecReg/MEGA/LCModel';
 % fit diff and also off
 %% Get sequence parameters
 [TE, TR, B0] = readSPAR();
-
+B0=7
 disp(['Found TE/TR (ms): ' num2str(TE) '/' num2str(TR)]);
 
 specType = {'diff', 'off'};
 mkdir('SpecReg/MEGA/Quant');
 
 for i = 1:2
-    fileName = ['raw_' specType{i}];
+    fileName = ['SN400002_' specType{i}];
 
     [lcmoutput, nmetabs] = readcoord([filepath '/' fileName '.COORD']);
 
