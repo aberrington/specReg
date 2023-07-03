@@ -11,14 +11,14 @@ delta0 = 4.7; % is the 'default'
 %[data,water,info,filename] = read_sinlabraw();
 [data, water, info, filename] = read_datalist();
 
-% This is for 3 T Philips
-%[data,water,info,filename] = read_sdat();
+info_struct.fmt         = 'datalist';
+info_struct.scanner     = 'Notts-Philips';
+info_struct.filename    = filename;
+info_struct.transmit_f  = info.transmit_frequency;
+info_struct.TE          = info.TE;
+info_struct.TR          = info.TR;
+info_struct.B0          = round(abs(info.transmit_frequency/42.57e6));
 
-% This is for GE (work in progress)  
-%[data, water, info, filename] = read_GE();
-
-% so far not processed the NWS water references for Newc
-% some Newcastle data require a flip of everything ...
 %% Data parameters
 
 [N, NT]             =   size(data);
@@ -42,7 +42,7 @@ mkdir([filepath '/Data']);
 %% Do an ECC correction
 % do it on the data
 data = mrs_ifft(data); % convert to FID
-data = spa_eddyCor2(mrs_ifft(water(:,2)),data); % Use one of the water refs
+data = spa_eddyCor2(mrs_ifft(water(:,1)),data); % Use one of the water refs
 data = mrs_fft(data); % convert back
 
 
@@ -94,6 +94,7 @@ ppm_vec = ppmscale(metab.info.BW, data, -metab.info.transmit_frequency/10^6, del
 %% Shift NAA frequency to actual ppm units
 
 [metab, SNR] = spec_reference_NAA(metab,ppm_vec,0);
+info_struct.SNR = SNR;
 
 %% Automatic rejection of datasets
 
@@ -170,6 +171,7 @@ txfrq = info.transmit_frequency;
 
 [LW] = meas_LW_water(waterf, metab,ppm_vec);
 
+info_struct.LW = LW;
 
 %% Main Alignment
 
@@ -180,6 +182,14 @@ save_data(s, [filepath '/Data']);
 
 write_sdatspar(metab,filename,[filepath '/Data/' C{1}]);
 write_spafiles(metab, waterfid, txfrq, info, delta0, [filepath '/Data/' C{1}]);
+
+% save information
+info_struct.name = C{1};
+JSONFILE_name= sprintf([filepath '/info.json']); 
+fid=fopen(JSONFILE_name,'w');
+encodedJSON = jsonencode(info_struct);
+fprintf(fid, encodedJSON);
+fclose(fid);
 
 %% Plots
 

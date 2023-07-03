@@ -1,12 +1,30 @@
 % script will run tissue segmentation using equations in 
 %% https://onlinelibrary.wiley.com/doi/10.1002/nbm.4257
-clear all
+function [] = specreg_quant_STEAM(tissue_frac)
+
+if(nargin<1)
+    disp('tissue fractions not provided - will look for .json file')
+    flag_frac = 0;
+else
+    flag_frac = 1;
+    disp(['GM is ' num2str(tissue_frac(1)*100) '%'])
+    frac.GM = tissue_frac(1);
+    disp(['WM is ' num2str(tissue_frac(2)*100) '%'])
+    frac.WM = tissue_frac(2);
+    disp(['CSF is ' num2str(tissue_frac(3)*100) '%'])
+    frac.CSF = tissue_frac(3);
+end
 
 filepath = 'SpecReg/STEAM/LCModel';
 
 % fit diff and also off
 %% Get sequence parameters
-[TE, TR, B0] = readSPAR();
+infofileID = 'SpecReg/STEAM/info.json';
+val = read_json_info(infofileID);
+
+TE = val.TE;
+TR = val.TR;
+B0 = val.B0;
 
 disp(['Found TE/TR (ms): ' num2str(TE) '/' num2str(TR)]);
 
@@ -43,13 +61,15 @@ mkdir('SpecReg/STEAM/Quant');
     relaxM = jsondecode(str);
 
     %% Tissue fraction
-    fid = fopen('tissue_frac_segmentation.json');
-    raw = fread(fid,inf); 
-    str = char(raw'); 
-    fclose(fid); 
-    frac = jsondecode(str);
-    disp(['Using tissue fractions (GM, WM, CSF): ' ...
-        num2str(frac.GM(1)) ', ' num2str(frac.WM(1)) ', ' num2str(frac.CSF(1))]);
+    if(flag_frac == 0)
+        fid = fopen('tissue_frac_segmentation.json');
+        raw = fread(fid,inf);
+        str = char(raw');
+        fclose(fid);
+        frac = jsondecode(str);
+        disp(['Using tissue fractions (GM, WM, CSF): ' ...
+            num2str(frac.GM(1)) ', ' num2str(frac.WM(1)) ', ' num2str(frac.CSF(1))]);
+    end
 
 
     %% Calculate relaxation coefficients
@@ -101,7 +121,8 @@ mkdir('SpecReg/STEAM/Quant');
 
     % read in file raw_diff and raw_off
     % perform corrections
-    clear
+end
+
 % write to a csv file
 function RMETAB = calc_relax_metab(metabname, relaxM, TE, TR)
 

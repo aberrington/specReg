@@ -2,7 +2,6 @@
 
 % want to find the .spa files in the SpecReg folder and then run them
 % through LCModel
-
 %% Ask for login information
 
 % Going to use this for all the subsequent commands
@@ -33,8 +32,10 @@ ssh2_conn = scp_put(ssh2_conn, 'run_lcmodel.sh', 'lcm_fit/.', [specRegPath '/cmd
 % Make an LCModel folder in SpecReg
 filepath = 'SpecReg/MEGA/LCModel';
 mkdir(filepath);
-isNewcastle = 0;
-isGE = 1;
+
+% read the info file to choose correct basis set
+infofileID = 'SpecReg/MEGA/info.json';
+val = read_json_info(infofileID);
 
 % Get all the processed files
 D       =   dir('SpecReg/MEGA/Data/*.spa');
@@ -103,7 +104,7 @@ for n = 1:(numBlockAnalyses + 1)
         
         if(fieldS==3)
             TE          =   68; % 7T is 72, 3T is 68
-            if(isGE)
+            if(strcmp(val.scanner, 'Notts-GE'))
                 specData    =   specData'; % currently need transpose for 3T GE dataset
                 waterData   =   waterData';
             end
@@ -117,24 +118,28 @@ for n = 1:(numBlockAnalyses + 1)
         % Change to where basis is located on server
         if(i==1)
             if(fieldS==3)
-                if(isGE)
+                if(strcmp(val.scanner, 'Notts-GE'))
                     tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3t_GE_MEGAPRESS_june2011_diff';
-                elseif(isNewcastle)
+                elseif(strcmp(val.scanner, 'Newcastle'))
                     tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_MEGAPRESS_Newcastle_68ms_DIFF_2023';
+                elseif(strcmp(val.scanner, 'Notts-Philips'))
+                    tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_MEGAPRESS_Nottingham_68ms_DIFF_2023';
                 else
-                    tes_basis(1).te     = '/home/bbzapb/bases/3T_MEGAPRESS_Nottingham_68ms_DIFF_2023';
+                    warning('Cant find basis set');
                 end
             else
                tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_MEGAsLASER_72ms_DIFF_2021';
             end
         else
             if(fieldS==3)
-                if(isGE)    
+                if(strcmp(val.scanner, 'Notts-GE'))
                     tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_PRESS68_no_LMM';
-                elseif(isNewcastle)
+                elseif(strcmp(val.scanner, 'Newcastle'))
                     tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_MEGAPRESS_Newcastle_68ms_OFF_2023';
+                elseif(strcmp(val.scanner, 'Notts-Philips'))
+                    tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/3T_MEGAPRESS_Nottingham_68ms_OFF_2023';
                 else
-                    tes_basis(1).te     = '/home/bbzapb/bases/3T_MEGAPRESS_Nottingham_68ms_OFF_2023';
+                    warning('Cant find basis set');
                 end
             else
                 tes_basis(1).te     = '/opt/magres/lcmodel_basis_sets/7T_MEGAsLASER_72ms_OFF_2021';

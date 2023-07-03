@@ -1,28 +1,80 @@
 % APB: Script to processes the MEGA data
 %% Display parameters
 
+function specreg_proc_MEGA(scanner, fmt)
+
+% Process MEGA data    
+%
+% ARGS :
+% scanner = scanner used for acquisition, can be either 
+%   Notts-Philips (default)
+%   Notts-GE
+%   Newcastle
+%
+% fmt = format of the data, can be 
+%   sdat
+%   datalist (default)
+%   sinlabraw
+%
+% If no options are given, the default values are used
+% RETURNS:
+% fids = data after inversed Fourier transform 
+%
+% EXAMPLE: 
+% >> FIDs = mrs_ifft(spectra); 
+% >> plot(FIDs)
+%
+% AUTHOR : Chen Chen
+% PLACE  : Sir Peter Mansfield Magnetic Resonance Centre (SPMMRC)
+
+if(nargin<2)
+    fmt = 'datalist';
+end
+
+if(nargin<1)
+    scanner = 'Notts-Philips';
+end
+
+%% Processing parameters
+
 spec_lb = 3;
 spec_filt = 0.12;
 delta0 = 4.7; % is the 'default'
-%% Processing parameters
 
 do_DAS          = 0; % causes baseline shifts when large water peak - not recommended for GE
 fMRS_block_size = 0; % split into 8 blocks
 
 %% Select the RAW files
-% This is for 7 T Raw files
-%[data,water,info,filename] = read_sinlabraw();
-%[data, water, info, filename] = read_datalist();
-%data=-1*data
-% This is for 3 T Philips
-%[data,water,info,filename] = read_sdat();
-flag_Newcastle = 0; % Newcastle = 1
+flag_Newcastle              = 0;
 
-% This is for GE (work in progress)  
-[data, water, info, filename] = read_GE();
+switch scanner
+    case 'Notts-Philips'
+        if(strcmp(fmt,'sdat'))
+            [data,water,info,filename]  = read_sdat();
+        elseif(strcmp(fmt, 'sinlabraw'))
+            [data, water, info, filename] = read_sinlabraw();
+        elseif(strcmp(fmt, 'datalist'))
+            [data,water,info,filename] = read_datalist();
+        else
+            disp('Unexpected format type')
+        end
+    case 'Notts-GE'
+        [data, water, info, filename] = read_GE();
+    case 'Newcastle'
+        flag_Newcastle = 1;
+        [data,water,info,filename] = read_sdat();
+    otherwise
+        warning('Error occured when choosing scanner, choose either \n Notts-Philips, Notts-GE, Newcastle')
+end
 
-% so far not processed the NWS water references for Newc
-% some Newcastle data require a flip of everything ...
+info_struct.fmt         = fmt;
+info_struct.scanner     = scanner;
+info_struct.filename    = filename;
+info_struct.transmit_f  = info.transmit_frequency;
+info_struct.TE          = info.TE;
+info_struct.TR          = info.TR;
+info_struct.B0          = round(abs(info.transmit_frequency/42.57e6));
+
 %% Data parameters
 
 [N, NT]             =   size(data);
@@ -104,6 +156,9 @@ ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, 
 %% Shift NAA frequency to actual ppm units
 
 [metab, SNR] = spec_reference_NAA(metab,ppm_vec);
+
+info_struct.SNR = SNR;
+
 
 %% Automatic rejection of datasets
 
@@ -201,6 +256,8 @@ txfrq = info.transmit_frequency;
 
 [LW] = meas_LW_water(waterf, metab,ppm_vec);
 
+info_struct.LW = LW;
+
 %% fMRS split here
 if(fMRS_block_size > 0) % if splitting into Blocks
     mkdir([filepath '/Data/Block/']);
@@ -256,6 +313,15 @@ save_diff_mat(s1, s2_cor, [filepath '/Data']);
 write_sdatspar(metab,filename,[filepath '/Data/' C{1}]);
 write_spafiles(metab, waterfid, txfrq, info, delta0, [filepath '/Data/' C{1}]);
 
+
+% save information
+info_struct.name = C{1};
+JSONFILE_name= sprintf([filepath '/info.json']); 
+fid=fopen(JSONFILE_name,'w');
+encodedJSON = jsonencode(info_struct);
+fprintf(fid, encodedJSON);
+fclose(fid);
+
 %% Plots
 
 figure('Name', 'Final ON/OFF before subtraction');
@@ -303,7 +369,7 @@ xlim([0 5]);
 ylim(yL);
 xlabel('ppm');
 print([filepath '/Figures/difference_spectrum.pdf'], '-dpdf', '-fillpage');
-
+end
 
 %% Functions
 function s2_cor = run_DAS(s1, s2, metab, delta0, do_DAS, filepath)
