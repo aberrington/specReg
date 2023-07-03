@@ -34,6 +34,9 @@ ssh2_conn = scp_put(ssh2_conn, 'run_lcmodel.sh', 'lcm_fit/.', [specRegPath '/cmd
 filepath = 'SpecReg/STEAM/LCModel';
 mkdir(filepath);
 
+infofileID = 'SpecReg/STEAM/info.json';
+val = read_json_info(infofileID);
+
 % Get all the processed files
 D       =   dir('SpecReg/STEAM/Data/*.spa');
 C       =   strsplit(D(1).name,'.');
