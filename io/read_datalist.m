@@ -13,5 +13,7 @@ water   = mrs_fft(conj(water_fid));
 
 info.BW = params(2);
 info.transmit_frequency = params(1)*10^6;
+info.TE = params(5);
+info.TR = params(6);
 
 end

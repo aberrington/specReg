@@ -170,9 +170,11 @@ else
 
 end
 
+
+out = io_loadspec_sdat(dirs_sdat{1},1);
+params = [out.txfrq/1e6, out.spectralwidth, 4.65, 1, out.te, out.tr];
+    
 if(save_uncombined)
-    out = io_loadspec_sdat(dirs_sdat{1},1);
-    params = [out.txfrq/1e6, out.spectralwidth, 4.65, 1];
     save([savename '.mat'], 'metabfid', 'waterfid', 'params');
 end
 
@@ -275,7 +277,7 @@ end
 
 metabfid    = outfid_ecc;
 waterfid    = outfid_wref_ecc;
-params      = [out.txfrq/1e6, out.spectralwidth, 4.65, 1];
+params      = [out.txfrq/1e6, out.spectralwidth, 4.65, 1, out.te, out.tr];
 
 %% save as spa file
 if(save_spa)

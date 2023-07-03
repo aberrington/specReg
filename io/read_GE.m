@@ -53,7 +53,7 @@ elseif(strcmp(c, '.7'))
     %% MRS acquisition info
     disp('-----------')
     disp([filename,':'])
-    get_MRS_info(header);
+    mrs_info = get_MRS_info(header);
 
 SV_info.num_points=header.rdb_hdr.frame_size; 
 SV_info.bw_Hz=header.rdb_hdr.user0;
@@ -232,3 +232,5 @@ data(:,2:2:end)         = all_B_nsa;
 
 info.BW     = SV_info.bw_Hz;
 info.transmit_frequency = SV_info.transmit_frequency;
+info.TE  = mrs_info.image.te/1000;
+info.TR  = mrs_info.image.tr/1000;
