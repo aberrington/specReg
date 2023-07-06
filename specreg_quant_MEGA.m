@@ -32,9 +32,9 @@ TE = val.TE;
 TR = val.TR;
 B0 = val.B0;
 
-disp(['Found TE/TR (ms): ' num2str(TE) '/' num2str(TR)]);
+disp(['Found TE/TR (ms): ' num2str(TE) '/' num2str(TR) ' and B0 (T): ' num2str(B0)]);
 
-B0 = 7; % replace because no relaxation params
+%B0 = 7; % replace because no relaxation params
 
 specType = {'diff', 'off'};
 mkdir('SpecReg/MEGA/Quant');
@@ -122,9 +122,9 @@ mkdir('SpecReg/MEGA/Quant');
                     + frac.WM(1)*density.d_WM*RH2O.WM ...
                     + frac.CSF(1)*density.d_CSF*RH2O.CSF)/((1-frac.CSF)*RMETAB);
 
-            if(i==1) % if difference spectrum
-                Scaled_Conc(n) = Scaled_Conc(n) * 2; % multiply by 2 for difference spectrum (made of 2 spectra)
-            end
+            %if(i==1) % if difference spectrum
+            %    Scaled_Conc(n) = Scaled_Conc(n) * 2; % multiply by 2 for difference spectrum (made of 2 spectra)
+            %end
 
             Metabolite(n) = m_string;
 
