@@ -253,6 +253,10 @@ else
     % if Hadamard then need to decode and do ecc
     
     if(isHadamard)
+        
+        outfid_ecc          = zeros(npoints, nav/2, 2);
+        outfid_wref_ecc     = zeros(npoints, floor((nwater-1)/2), 2);
+    
         outfid_wref_ecc_v1 = [];
         outfid_wref_ecc_v2 = [];
         
@@ -271,6 +275,13 @@ else
             outfid_wref_ecc_v1(:,m-1) = spec_ecc_cor(waterv1(:,m),waterv1(:,1),0,0); % have to now throw away 1st water scan
             outfid_wref_ecc_v2(:,m-1) = spec_ecc_cor(waterv2(:,m),waterv2(:,1),0,0); % have to now throw away 1st water scan
         end
+        
+        outfid_ecc(:,:,1) = outfid_ecc_v1;
+        outfid_ecc(:,:,2) = outfid_ecc_v1;
+        
+        outfid_wref_ecc(:,:,1) = outfid_wref_ecc_v1;
+        outfid_wref_ecc(:,:,2) =  outfid_wref_ecc_v2;
+        
     end
     
 end
