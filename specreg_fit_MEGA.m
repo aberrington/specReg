@@ -6,7 +6,7 @@
 
 % Going to use this for all the subsequent commands
 %usr = input('Enter username for cador.magres.nottingham.ac.uk\n', 's');
-HOSTNAME = 'cador.magres.nottingham.ac.uk';
+HOSTNAME = 'carados.magres.nottingham.ac.uk';
 [USR, PASSWD] = GetAuthentication;
 %pswd = input(['Enter password for ' usr '@cador.magres.nottingham.ac.uk\n'],'s');
 % Going to copy the run_lcmodel.sh script to a scratch directory in users
