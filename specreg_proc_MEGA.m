@@ -172,7 +172,9 @@ end
 if(sum(f_vec_diff>5))
     disp('WARNING: Frequency shifted > 5 Hz between shots - potential for large drift (FWHM(95%) of 7 T editing pulse = 30Hz)')
 end
-
+disp(['Max F shift = ' num2str(max(f_vec_diff))])
+disp(['Mean F shift = ' num2str(mean(f_vec_diff))])
+disp(['Median F shift = ' num2str(median(f_vec_diff))])
 % calculate ppm vector from information
 ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, delta0); % 4.7 because in previous script but need to get exact value
 
