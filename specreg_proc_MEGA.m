@@ -128,6 +128,7 @@ data_off    =   mrs_ifft(data_off);
 data_on     =   mrs_ifft(data_on);
 template    =   mrs_ifft(template);
 
+%[metab.off_global, f_vec_off, p_vec_off,f_align_OFF]    = spec_reg_fn(data_off, template, metab.info, [0 5], 1, delta0);
 % Do first spectral registration to template
 [metab.off_global, f_vec_off, p_vec_off,f_align_OFF]    = spec_reg_fn(data_off, template, metab.info, [0 5], 1, delta0);
 [metab.on_global, f_vec_on, p_vec_on, f_align_ON]       = spec_reg_fn(data_on, template, metab.info, [0 5], 1, delta0);
@@ -141,7 +142,7 @@ print([filepath '/Figures/align_ON.pdf'], '-dpdf', '-fillpage');
 f_vec(1:2:size(f_vec_off,2)*2) = f_vec_off;
 f_vec(2:2:size(f_vec_off,2)*2) = f_vec_on;
 p_vec(1:2:size(f_vec_off,2)*2) = p_vec_off;
-p_vec(1:2:size(f_vec_off,2)*2) = p_vec_on;
+p_vec(2:2:size(f_vec_off,2)*2) = p_vec_on;
 
 figure('Name', 'Corrections Applied');
 subplot(2,1,1)
@@ -150,14 +151,54 @@ plot(1:length(f_vec),zeros(1,length(f_vec)), 'r--');legend('F0', 'Template F0');
 subplot(2,1,2)
 plot(rad2deg(p_vec));xlabel('measurement'); ylabel('phase (deg)');
 print([filepath '/Figures/corrections.pdf'], '-dpdf', '-fillpage');
+
+% Have a look at the phase and frequency corrections between ON and OFF
+
+f_vec_diff = abs(f_vec(1:2:end) - f_vec(2:2:end));
+p_vec_diff = p_vec(1:2:end) - p_vec(2:2:end);
+
+zfvec = (f_vec_diff - mean(f_vec_diff)) ./std(f_vec_diff);
+zpvec = (p_vec_diff - mean(p_vec_diff)) ./std(p_vec_diff);
+
+f_rej = find(zfvec>3);
+p_rej = find(abs(zpvec)>3);
+if(~isempty(f_rej))
+    disp(['Removing shots: ' num2str(f_rej) ' due to extreme (3 sigma) frequency shift of ' num2str(f_vec_diff(f_rej))])
+end
+if(~isempty(p_rej))
+    disp(['Removing shots: ' num2str(p_rej) ' due to extreme (3 sigma) phase shift'])
+end
+
+if(sum(f_vec_diff>5))
+    disp('WARNING: Frequency shifted > 5 Hz between shots - potential for large drift (FWHM(95%) of 7 T editing pulse = 30Hz)')
+end
+
 % calculate ppm vector from information
 ppm_vec = ppmscale(metab.info.BW, data_on, -metab.info.transmit_frequency/10^6, delta0); % 4.7 because in previous script but need to get exact value
+
+% Get alignment parameters for creatine peak in off-spectrum
+
+%[metab, SNR] = spec_align_to_Cr(metab,ppm_vec)
 
 %% Shift NAA frequency to actual ppm units
 
 [metab, SNR] = spec_reference_NAA(metab,ppm_vec);
 
 info_struct.SNR = SNR;
+
+%% now align pairs
+for n= 1:size(data_off,2)
+    [data_off_algn(:,n), f_vec(n), p_vec(n)] = spec_reg_fn(metab.off_global(:,n), metab.on_global(:,n), metab.info, [2.8 3.15], 1, delta0, 0, 0.2);
+end
+
+%data_diff_pair = metab.on_global-data_off_algn;
+
+%for n= 1:size(data_diff_pair,2)
+%    data_diff_algn(:,n) = spec_reg_fn(data_diff_pair(:,n), mean(data_diff_pair,2), metab.info, [0 5], 1, delta0, 0.2);
+%end
+
+metab.off_global = data_off_algn;
+
 
 
 %% Automatic rejection of datasets
@@ -176,12 +217,25 @@ R = mrs_fft(metab.concat);
 R = real(R(P,:)); % real cho peak
 
 % For all measurements - measure the mean square error MSE from mean
+% -could try to zerofill to help here
+
+% try zerofill
+
 for i = 1:size(R,2)
     MSE(i) = norm(mean(R,2)-R(:,i));
 end
 % compute z-score
 zMSE = (MSE - mean(MSE)) ./std(MSE);
- 
+
+% threshold around central value
+Q1 = prctile(MSE, 25);
+Q3 = prctile(MSE, 75);
+% Compute the IQR
+IQR = Q3 - Q1;
+% Define outlier thresholds
+lower_bound = Q1 - 1.5 * IQR;
+upper_bound = Q3 + 1.5 * IQR;
+
 figure('Name', 'Automatic Outlier Rejection');
 subplot(1,2,1)
 rej_idx = find(abs(zMSE)>3);
@@ -229,8 +283,14 @@ metab.off_rejected = metab.off_global;
 metab.on_rejected = metab.on_global;
 
 % Throw away bad shots
-metab.off_rejected(:, OFF_rej) = [];
-metab.on_rejected(:, ON_rej) = [];
+% sometimes there are duplicates - need to ensure throwing right ones away
+
+rej_array = unique([OFF_rej, ON_rej, f_rej, p_rej]); % find unique indices to throw
+
+metab.off_rejected(:, rej_array) = [];
+%metab.off_rejected(:, rej_array) = [];
+metab.on_rejected(:, rej_array) = []; % make sure to now throw out pairs
+%metab.on_rejected(:, rej_array) = [];
 
 
 %% Water referencing
@@ -305,7 +365,14 @@ end
 s1=squeeze(mean(metab.off_rejected,2));
 s2=squeeze(mean(metab.on_rejected,2));
 
+
 s2_cor = run_DAS(s1, s2, metab, delta0, do_DAS, filepath);
+
+% diff_res = metab.on_rejected - metab.off_rejected;
+% 
+% for n= 1:size(diff_res,2)
+%    diff_res_c(:,n) = spec_reg_fn(diff_res(:,n), mean(diff_res,2), metab.info, [2.75 3.25], 1, delta0, 0, 0.1);
+% end
 
 metab   = save_param(metab, s1 ,s2_cor);
 save_diff_mat(s1, s2_cor, [filepath '/Data']);
@@ -363,12 +430,28 @@ print([filepath '/Figures/spec_no_corr.pdf'], '-dpdf', '-fillpage');
 
 figure('Name', 'Diff Spec');hold on
 plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),spec_lb,info.BW,spec_filt))));
+%hold on
+%plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(mean(diff_res_c,2),spec_lb,info.BW,spec_filt))));
 yL=get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),spec_lb,info.BW,spec_filt))), ppm_vec);
 set(gca, 'XDir', 'reverse');
 xlim([0 5]);
 ylim(yL);
 xlabel('ppm');
 print([filepath '/Figures/difference_spectrum.pdf'], '-dpdf', '-fillpage');
+
+
+figure('Name', 'Diff Spec _ scaled');hold on
+pbaspect([1.0000    0.2046    0.2046])
+plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),spec_lb,info.BW,spec_filt))));
+%hold on
+%plot(ppm_vec,real(mrs_fft(broaden_filter_FID_sw(mean(diff_res,2),spec_lb,info.BW,spec_filt))));
+yL=get_ylim_editing(real(mrs_fft(broaden_filter_FID_sw((s2_cor-s1)*exp(1i*0*pi/180),spec_lb,info.BW,spec_filt))), ppm_vec);
+set(gca, 'XDir', 'reverse');
+xlim([0 5]);
+ylim(yL);
+xlabel('ppm');
+print([filepath '/Figures/difference_spectrum_scaled.pdf'], '-dpdf', '-fillpage');
+
 end
 
 %% Functions
