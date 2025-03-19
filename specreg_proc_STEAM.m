@@ -169,7 +169,7 @@ waterf = spa_eddyCor2(waterf(:,2),waterf); % Eddy current corretion
 waterfid = mean(water_aligned,2); % average water acquisitions
 txfrq = info.transmit_frequency;
 
-[LW] = meas_LW_water(waterfid, metab,ppm_vec, 'g');
+[LW] = meas_LW_water(waterfid, metab,ppm_vec, 'v');
 
 info_struct.LW = LW;
 

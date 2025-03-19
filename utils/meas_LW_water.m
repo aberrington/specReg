@@ -11,7 +11,10 @@ ppm_per_point = ppm_vec(2)-ppm_vec(1);
 shft = round(rng_ppm_NAA/ppm_per_point/2);
 if(strcmp(model, 'v'))
     [A_peak, I_peak, peak_fitted, pars_fitted] = mrs_fitPeak_voigt( mrs_fft(sum(waterf,2)), [(I-abs(shft)),(I + abs(shft))], 0); % fit peak
-    FWHM = 0.5346*pars_fitted(5) + sqrt(0.2166*pars_fitted(5)^2 + pars_fitted(3)^2); % using definition of width of voigt profile
+    f_L = 2*pars_fitted(5); % lorentzian component
+    f_G = 2*pars_fitted(3) * sqrt(2*log(2)); % gaussian component
+
+    FWHM = 0.5346*f_L + sqrt(0.2166*f_L^2 + f_G^2); % using definition of width of voigt profile
 elseif(strcmp(model, 'l'))
     [A_peak, I_peak, peak_fitted, pars_fitted] = mrs_fitPeak_lorentz( mrs_fft(sum(waterf,2)), [(I-abs(shft)),(I + abs(shft))], 0); % fit peak
     FWHM = pars_fitted(3);
