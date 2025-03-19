@@ -41,7 +41,7 @@ spec_lb = 3;
 spec_filt = 0.12;
 delta0 = 4.7; % is the 'default'
 
-do_DAS          = 0; % causes baseline shifts when large water peak - not recommended for GE
+do_DAS          = 1; % causes baseline shifts when large water peak - not recommended for GE
 fMRS_block_size = 0; % split into 8 blocks
 
 %% Select the RAW files
